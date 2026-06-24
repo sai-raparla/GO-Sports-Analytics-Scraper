@@ -1,0 +1,161 @@
+// Command server exposes the scraper over a small HTTP+JSON API for the web UI.
+package main
+
+import (
+	"encoding/json"
+	"flag"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+
+	"sports-scraper/internal/models"
+	"sports-scraper/internal/scraper"
+	"sports-scraper/internal/stats"
+)
+
+func main() {
+	addr := flag.String("addr", ":8080", "address to listen on")
+	flag.Parse()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/search", handleSearch)
+	mux.HandleFunc("/api/player", handlePlayer)
+	mux.HandleFunc("/api/recent", handleRecent)
+	mux.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+
+	log.Printf("scraper API listening on %s", *addr)
+	if err := http.ListenAndServe(*addr, withCORS(mux)); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// handleSearch resolves a (partial) player name to candidate players.
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		writeError(w, http.StatusBadRequest, "missing 'name' query parameter")
+		return
+	}
+	results, err := scraper.SearchPlayers(name)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, results)
+}
+
+// handlePlayer returns a player's bio + season/career stats.
+func handlePlayer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing 'id' query parameter")
+		return
+	}
+	player, err := scraper.FetchPlayer(id)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, player)
+}
+
+type recentResponse struct {
+	PlayerID string                 `json:"player_id"`
+	Type     string                 `json:"type"`
+	Year     int                    `json:"year"`
+	Days     int                    `json:"days"`
+	From     string                 `json:"from"`
+	To       string                 `json:"to"`
+	Games    int                    `json:"games"`
+	Batting  *stats.BattingSummary  `json:"batting,omitempty"`
+	Pitching *stats.PitchingSummary `json:"pitching,omitempty"`
+	GameLogs []models.GameLog       `json:"game_logs"`
+}
+
+// handleRecent returns a player's game logs filtered to the last N days, plus
+// an aggregated summary stat line.
+func handleRecent(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing 'id' query parameter")
+		return
+	}
+	logType := q.Get("type")
+	if logType == "" {
+		logType = "batting"
+	}
+	year := atoiDefault(q.Get("year"), time.Now().Year())
+	days := atoiDefault(q.Get("days"), 30)
+
+	logs, err := scraper.FetchGameLog(id, logType, year)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	now := time.Now()
+	filtered := stats.FilterByDays(logs, days, now)
+
+	resp := recentResponse{
+		PlayerID: id,
+		Type:     logType,
+		Year:     year,
+		Days:     days,
+		From:     now.AddDate(0, 0, -days).Format(stats.DateLayout),
+		To:       now.Format(stats.DateLayout),
+		Games:    len(filtered),
+		GameLogs: filtered,
+	}
+	switch logType {
+	case "pitching", "p":
+		agg := stats.AggregatePitching(filtered)
+		resp.Pitching = &agg
+		resp.Type = "pitching"
+	default:
+		agg := stats.AggregateBatting(filtered)
+		resp.Batting = &agg
+		resp.Type = "batting"
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("encode error: %v", err)
+	}
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+func atoiDefault(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return n
+}

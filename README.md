@@ -1,8 +1,10 @@
 # GO Sports Analytics Scraper
 
-A command-line sports analytics scraper written in Go. It collects MLB player
-statistics from [baseball-reference.com](https://www.baseball-reference.com/players/)
-and writes them to JSON/CSV files.
+A sports analytics scraper written in Go, with a React web UI. It collects MLB
+player statistics from
+[baseball-reference.com](https://www.baseball-reference.com/players/) and either
+writes them to JSON/CSV files (CLI) or serves them to a browser (web app) where
+you can search a player and view their last-N-days stats.
 
 It covers two kinds of data:
 
@@ -78,10 +80,50 @@ Flags:
 - `--format` — `json`, `csv`, or `both`.
 - `--out` — output directory.
 
+## Web UI
+
+A React app lets you search a player by name, pick a date window (default the
+last 30 days), and see their aggregated stat line plus a game-by-game table. It
+talks to a small Go HTTP API that wraps the scraper.
+
+### 1. Start the API server
+
+```bash
+go build -o server ./cmd/server
+./server            # listens on :8080
+```
+
+Endpoints:
+
+- `GET /api/search?name=Aaron Judge` — resolve a name to player IDs.
+- `GET /api/player?id=judgeaa01` — bio + season/career stats.
+- `GET /api/recent?id=judgeaa01&type=batting&days=30&year=2026` — game logs
+  filtered to the last N days plus an aggregated summary (counting stats summed,
+  rate stats like AVG/OBP/SLG/OPS and ERA/WHIP recomputed).
+
+### 2. Start the web app
+
+```bash
+cd web
+npm install
+npm run dev         # serves on http://localhost:5173
+```
+
+The dev server proxies `/api/*` to the Go server on `:8080`, so just open
+http://localhost:5173 and search for a player.
+
+> Note: if your environment can't reach the default npm registry, install with a
+> mirror, e.g. `npm install --registry https://registry.npmmirror.com`.
+
+The "last N days" window is measured from today's date, so an injured or
+off-season player may show few or no games — widen the window or change the
+season with the controls.
+
 ## Project layout
 
 ```
 cmd/scraper/main.go        CLI (cobra): player, gamelog, search
+cmd/server/main.go         HTTP+JSON API for the web UI (CORS enabled)
 internal/scraper/
   collector.go             colly collector: rate limiting, retry, comment stripping
   parse.go                 shared helpers (IDs, URLs, row parsing)
@@ -89,7 +131,9 @@ internal/scraper/
   gamelog.go               season game-by-game logs
   index.go                 name -> player ID search
 internal/models/models.go  Player, SeasonBatting, SeasonPitching, GameLog
+internal/stats/aggregate.go  date-window filtering + batting/pitching aggregation
 internal/output/writer.go  JSON and CSV writers
+web/                       React + Vite + TypeScript front end
 ```
 
 ## How it handles baseball-reference

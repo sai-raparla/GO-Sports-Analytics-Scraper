@@ -46,7 +46,7 @@ export function SummaryCards({ recent }: Props) {
     <section className="summary">
       <div className="summary-heading">
         <h3>
-          Last {recent.days} days
+          {recent.days === 0 ? `Full season ${recent.year}` : `Last ${recent.days} days`}
           <span className="summary-window">
             {recent.from} &rarr; {recent.to}
           </span>

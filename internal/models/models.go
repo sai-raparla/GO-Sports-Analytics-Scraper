@@ -19,6 +19,16 @@ type Player struct {
 	Pitching []SeasonPitching `json:"pitching,omitempty"`
 }
 
+// Team is the top-level record for a single MLB team's season totals.
+type Team struct {
+	ID             string            `json:"id"`
+	Year           int               `json:"year"`
+	Name           string            `json:"name"`
+	SourceURL      string            `json:"source_url"`
+	BattingTotals  map[string]string `json:"batting_totals,omitempty"`
+	PitchingTotals map[string]string `json:"pitching_totals,omitempty"`
+}
+
 // SeasonBatting is one row of a player's standard batting table. The "Season"
 // field is "Career" for the totals row.
 type SeasonBatting struct {

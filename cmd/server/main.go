@@ -21,6 +21,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/search", handleSearch)
 	mux.HandleFunc("/api/player", handlePlayer)
+	mux.HandleFunc("/api/team", handleTeam)
 	mux.HandleFunc("/api/recent", handleRecent)
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -60,6 +61,30 @@ func handlePlayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, player)
+}
+
+// handleTeam returns a team's season batting and pitching totals.
+func handleTeam(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	teamQuery := q.Get("team")
+	if teamQuery == "" {
+		teamQuery = q.Get("id")
+	}
+	if teamQuery == "" {
+		teamQuery = q.Get("name")
+	}
+	if teamQuery == "" {
+		writeError(w, http.StatusBadRequest, "missing 'team' query parameter")
+		return
+	}
+
+	year := atoiDefault(q.Get("year"), time.Now().Year())
+	team, err := scraper.FetchTeam(teamQuery, year)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, team)
 }
 
 type recentResponse struct {

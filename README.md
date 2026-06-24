@@ -13,6 +13,8 @@ It covers two kinds of data:
 - **Recent / "live"** — a player's game-by-game log for a season (the freshest
   data baseball-reference exposes; the site is a reference database, not a true
   real-time feed).
+- **Team totals** — a team's season batting and pitching totals, such as runs,
+  home runs, walks, strikeouts, ERA, and WHIP.
 
 Scraping is built on [colly](https://github.com/gocolly/colly).
 
@@ -64,6 +66,29 @@ Outputs (under `output/`):
 - `judgeaa01.json` — full record (bio + batting + pitching).
 - `judgeaa01_batting.csv` — batting seasons + career row.
 - `judgeaa01_pitching.csv` — pitching seasons + career row (pitchers only).
+
+### Team season totals
+
+```bash
+./scraper team --name "New York Yankees" --year 2025 --format both
+# or with a baseball-reference team ID:
+./scraper team --id NYY --year 2025
+```
+
+Flags:
+
+- `--id` — team ID (e.g. `NYY`).
+- `--name` — resolve a team name instead of passing `--id`.
+- `--year` — season (default: current year).
+- `--format` — `json`, `csv`, or `both`.
+- `--out` — output directory.
+
+Outputs (under `output/`):
+
+- `NYY_2025.json` — full team totals record.
+- `NYY_2025_batting.csv` — batting totals, including stats like runs and home
+  runs.
+- `NYY_2025_pitching.csv` — pitching totals.
 
 ### Recent / "live" stats (season game log)
 
@@ -128,9 +153,10 @@ internal/scraper/
   collector.go             colly collector: rate limiting, retry, comment stripping
   parse.go                 shared helpers (IDs, URLs, row parsing)
   player.go                bio + season/career batting & pitching tables
+  team.go                  team season batting & pitching totals
   gamelog.go               season game-by-game logs
   index.go                 name -> player ID search
-internal/models/models.go  Player, SeasonBatting, SeasonPitching, GameLog
+internal/models/models.go  Player, Team, SeasonBatting, SeasonPitching, GameLog
 internal/stats/aggregate.go  date-window filtering + batting/pitching aggregation
 internal/output/writer.go  JSON and CSV writers
 web/                       React + Vite + TypeScript front end

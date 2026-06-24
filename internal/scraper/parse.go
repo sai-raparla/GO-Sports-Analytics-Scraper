@@ -30,6 +30,11 @@ func gameLogURL(id, t string, year int) string {
 	return fmt.Sprintf("%s/players/gl.fcgi?id=%s&t=%s&year=%d", BaseURL, id, t, year)
 }
 
+// teamURL builds the canonical team season page URL.
+func teamURL(id string, year int) string {
+	return fmt.Sprintf("%s/teams/%s/%d.shtml", BaseURL, strings.ToUpper(id), year)
+}
+
 // rowCells returns a map of data-stat -> cell text for a single table row.
 // baseball-reference tags every cell with a data-stat attribute, which is a
 // far more stable key than column position.

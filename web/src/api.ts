@@ -1,4 +1,4 @@
-import type { Player, RecentResponse, SearchResult, StatType } from "./types";
+import type { Player, RecentResponse, SearchResult, StatType, Team } from "./types";
 
 async function getJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
@@ -24,6 +24,14 @@ export function searchPlayers(name: string, signal?: AbortSignal) {
 
 export function fetchPlayer(id: string, signal?: AbortSignal) {
   return getJSON<Player>(`/api/player?id=${encodeURIComponent(id)}`, signal);
+}
+
+export function fetchTeam(team: string, year: number, signal?: AbortSignal) {
+  const q = new URLSearchParams({
+    team,
+    year: String(year),
+  });
+  return getJSON<Team>(`/api/team?${q.toString()}`, signal);
 }
 
 export function fetchRecent(

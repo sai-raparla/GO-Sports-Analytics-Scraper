@@ -55,6 +55,14 @@ body {
   color: var(--text-dim);
   margin: 0 0 22px;
 }
+.mode-switch {
+  display: inline-flex;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
 
 .searchbox {
   position: relative;
@@ -243,6 +251,43 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+.team-search {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  align-items: end;
+  gap: 12px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.team-searchbox {
+  position: relative;
+}
+.primary-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 84px;
+}
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+}
 
 /* Summary */
 .summary-heading {
@@ -337,6 +382,15 @@ table.gamelog tbody tr:last-child td {
 .sticky-col {
   font-variant-numeric: tabular-nums;
 }
+.stats-table th:first-child,
+.stats-table td:first-child {
+  text-align: left;
+}
+.stats-table th:last-child,
+.stats-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 /* States */
 .placeholder,
@@ -363,4 +417,13 @@ table.gamelog tbody tr:last-child td {
   text-align: center;
   color: var(--text-dim);
   font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .team-search {
+    grid-template-columns: 1fr;
+  }
+  .primary-btn {
+    width: 100%;
+  }
 }

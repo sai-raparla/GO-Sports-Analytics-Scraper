@@ -56,6 +56,15 @@ export interface Player {
   pitching?: SeasonPitching[];
 }
 
+export interface Team {
+  id: string;
+  year: number;
+  name: string;
+  source_url: string;
+  batting_totals?: Record<string, string>;
+  pitching_totals?: Record<string, string>;
+}
+
 export interface BattingSummary {
   games: number;
   pa: number;

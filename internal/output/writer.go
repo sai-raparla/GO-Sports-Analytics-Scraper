@@ -97,6 +97,46 @@ func WriteGameLogCSV(path string, logs []models.GameLog) error {
 	return writeCSV(path, header, rows)
 }
 
+// WriteTeamCSV writes a team's batting and pitching totals to separate CSV
+// files. Stat columns are sorted for stable output.
+func WriteTeamCSV(dir string, t *models.Team) ([]string, error) {
+	if err := EnsureDir(dir); err != nil {
+		return nil, err
+	}
+
+	var written []string
+	if len(t.BattingTotals) > 0 {
+		path := filepath.Join(dir, fmt.Sprintf("%s_%d_batting.csv", t.ID, t.Year))
+		if err := writeTeamTotalsCSV(path, t, t.BattingTotals); err != nil {
+			return written, err
+		}
+		written = append(written, path)
+	}
+	if len(t.PitchingTotals) > 0 {
+		path := filepath.Join(dir, fmt.Sprintf("%s_%d_pitching.csv", t.ID, t.Year))
+		if err := writeTeamTotalsCSV(path, t, t.PitchingTotals); err != nil {
+			return written, err
+		}
+		written = append(written, path)
+	}
+	return written, nil
+}
+
+func writeTeamTotalsCSV(path string, t *models.Team, stats map[string]string) error {
+	keys := make([]string, 0, len(stats))
+	for k := range stats {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	header := append([]string{"team_id", "year", "team_name"}, keys...)
+	row := []string{t.ID, fmt.Sprint(t.Year), t.Name}
+	for _, k := range keys {
+		row = append(row, stats[k])
+	}
+	return writeCSV(path, header, [][]string{row})
+}
+
 func writeCSV(path string, header []string, rows [][]string) error {
 	f, err := os.Create(path)
 	if err != nil {

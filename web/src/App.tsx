@@ -122,7 +122,7 @@ export function App() {
 
       {mode === "player" && selected && (
         <main className="content">
-          {player && <PlayerHeader player={player} />}
+          {player && <PlayerHeader player={player} year={year} />}
 
           <div className="controls">
             <div className="toggle">

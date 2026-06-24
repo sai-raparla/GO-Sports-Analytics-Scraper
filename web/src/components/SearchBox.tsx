@@ -15,11 +15,17 @@ export function SearchBox({ onSelect }: Props) {
   const [error, setError] = useState<string | null>(null);
   const debounced = useDebounced(query.trim(), 350);
   const boxRef = useRef<HTMLDivElement>(null);
+  // Name of the player just picked. Selecting fills the input with the full
+  // name, which would otherwise re-trigger the search and reopen the dropdown.
+  const selectedName = useRef<string | null>(null);
 
   useEffect(() => {
     if (debounced.length < 2) {
       setResults([]);
       setError(null);
+      return;
+    }
+    if (debounced === selectedName.current) {
       return;
     }
     const controller = new AbortController();
@@ -48,7 +54,9 @@ export function SearchBox({ onSelect }: Props) {
   }, []);
 
   function pick(p: SearchResult) {
+    selectedName.current = p.name;
     setQuery(p.name);
+    setResults([]);
     setOpen(false);
     onSelect(p);
   }
@@ -60,7 +68,10 @@ export function SearchBox({ onSelect }: Props) {
         type="text"
         value={query}
         placeholder="Search a player, e.g. Aaron Judge"
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          selectedName.current = null;
+          setQuery(e.target.value);
+        }}
         onFocus={() => results.length > 0 && setOpen(true)}
         autoFocus
       />

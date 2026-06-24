@@ -1,0 +1,10 @@
+# Build output
+/scraper
+/bin/
+
+# Scraped data
+/output/
+
+# OS / editor
+.DS_Store
+*.log

@@ -20,6 +20,8 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isCurrentSeason = year === CURRENT_YEAR;
+
   // Fetch bio once per selected player.
   useEffect(() => {
     if (!selected) return;
@@ -61,7 +63,9 @@ export function App() {
           <span className="hero-accent">Baseball</span> Stats Explorer
         </h1>
         <p className="hero-sub">
-          Search a player and see their stats for the last {days} days.
+          {isCurrentSeason && days > 0
+            ? `Search a player and see their stats for the last ${days} days.`
+            : `Search a player and see their full ${year} season stats.`}
         </p>
         <SearchBox onSelect={onSelect} />
       </div>
@@ -86,9 +90,11 @@ export function App() {
             <label className="control">
               <span>Window</span>
               <select
-                value={days}
+                value={isCurrentSeason ? days : 0}
+                disabled={!isCurrentSeason}
                 onChange={(e) => setDays(Number(e.target.value))}
               >
+                <option value={0}>Full season</option>
                 {DAY_OPTIONS.map((d) => (
                   <option key={d} value={d}>
                     Last {d} days

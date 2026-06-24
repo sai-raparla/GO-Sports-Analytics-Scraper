@@ -26,13 +26,13 @@ func main() {
 func rootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "scraper",
-		Short: "Scrape MLB player stats from baseball-reference.com",
-		Long: "scraper collects historical (season/career) and recent (game-log)\n" +
-			"baseball stats from baseball-reference.com and writes them to JSON/CSV.\n\n" +
+		Short: "Scrape MLB stats from baseball-reference.com",
+		Long: "scraper collects player historical stats, player game logs, and\n" +
+			"team season stats from baseball-reference.com and writes them to JSON/CSV.\n\n" +
 			"Please scrape responsibly: the tool is rate-limited by default to respect\n" +
 			"baseball-reference's servers and terms of use.",
 	}
-	root.AddCommand(playerCmd(), gameLogCmd(), searchCmd())
+	root.AddCommand(playerCmd(), teamCmd(), gameLogCmd(), searchCmd())
 	return root
 }
 
@@ -115,6 +115,35 @@ func gameLogCmd() *cobra.Command {
 	return cmd
 }
 
+func teamCmd() *cobra.Command {
+	var id, format, outDir string
+	var year int
+	cmd := &cobra.Command{
+		Use:   "team",
+		Short: "Scrape a team's batting and pitching totals for a season",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			if id == "" {
+				return fmt.Errorf("--id is required")
+			}
+
+			fmt.Printf("Scraping team %s %d ...\n", strings.ToUpper(id), year)
+			team, err := scraper.FetchTeam(id, year)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Found %s (%d batting stats, %d pitching stats)\n",
+				team.Name, len(team.BattingTotals), len(team.PitchingTotals))
+
+			return writeTeam(format, outDir, team)
+		},
+	}
+	cmd.Flags().StringVar(&id, "id", "", "baseball-reference team id (e.g. NYY)")
+	cmd.Flags().IntVar(&year, "year", time.Now().Year(), "season year")
+	cmd.Flags().StringVar(&format, "format", "json", "output format: json, csv, or both")
+	cmd.Flags().StringVar(&outDir, "out", "output", "output directory")
+	return cmd
+}
+
 func searchCmd() *cobra.Command {
 	var name string
 	cmd := &cobra.Command{
@@ -187,6 +216,27 @@ func writePlayer(format, outDir, id string, player *models.Player) error {
 	}
 	if format == "csv" || format == "both" {
 		paths, err := output.WritePlayerCSV(outDir, id, player)
+		if err != nil {
+			return err
+		}
+		for _, p := range paths {
+			fmt.Println("wrote", p)
+		}
+	}
+	return nil
+}
+
+func writeTeam(format, outDir string, team *models.Team) error {
+	base := fmt.Sprintf("%s_%d", team.ID, team.Year)
+	if format == "json" || format == "both" {
+		path := filepath.Join(outDir, base+".json")
+		if err := output.WriteJSON(path, team); err != nil {
+			return err
+		}
+		fmt.Println("wrote", path)
+	}
+	if format == "csv" || format == "both" {
+		paths, err := output.WriteTeamCSV(outDir, team)
 		if err != nil {
 			return err
 		}

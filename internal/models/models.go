@@ -4,15 +4,15 @@ package models
 // Player is the top-level record for a single baseball player, combining
 // biographical data with their historical season-by-season statistics.
 type Player struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Position string `json:"position,omitempty"`
-	Bats     string `json:"bats,omitempty"`
-	Throws   string `json:"throws,omitempty"`
-	Height   string `json:"height,omitempty"`
-	Weight   string `json:"weight,omitempty"`
-	Born     string `json:"born,omitempty"`
-	Team     string `json:"team,omitempty"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Position  string `json:"position,omitempty"`
+	Bats      string `json:"bats,omitempty"`
+	Throws    string `json:"throws,omitempty"`
+	Height    string `json:"height,omitempty"`
+	Weight    string `json:"weight,omitempty"`
+	Born      string `json:"born,omitempty"`
+	Team      string `json:"team,omitempty"`
 	SourceURL string `json:"source_url"`
 
 	Batting  []SeasonBatting  `json:"batting,omitempty"`
@@ -22,28 +22,28 @@ type Player struct {
 // SeasonBatting is one row of a player's standard batting table. The "Season"
 // field is "Career" for the totals row.
 type SeasonBatting struct {
-	Season string `json:"season"`
-	Age    string `json:"age,omitempty"`
-	Team   string `json:"team,omitempty"`
-	League string `json:"league,omitempty"`
-	WAR    string `json:"war,omitempty"`
-	G      string `json:"g,omitempty"`
-	PA     string `json:"pa,omitempty"`
-	AB     string `json:"ab,omitempty"`
-	R      string `json:"r,omitempty"`
-	H      string `json:"h,omitempty"`
+	Season  string `json:"season"`
+	Age     string `json:"age,omitempty"`
+	Team    string `json:"team,omitempty"`
+	League  string `json:"league,omitempty"`
+	WAR     string `json:"war,omitempty"`
+	G       string `json:"g,omitempty"`
+	PA      string `json:"pa,omitempty"`
+	AB      string `json:"ab,omitempty"`
+	R       string `json:"r,omitempty"`
+	H       string `json:"h,omitempty"`
 	Doubles string `json:"2b,omitempty"`
 	Triples string `json:"3b,omitempty"`
-	HR     string `json:"hr,omitempty"`
-	RBI    string `json:"rbi,omitempty"`
-	SB     string `json:"sb,omitempty"`
-	CS     string `json:"cs,omitempty"`
-	BB     string `json:"bb,omitempty"`
-	SO     string `json:"so,omitempty"`
-	BA     string `json:"ba,omitempty"`
-	OBP    string `json:"obp,omitempty"`
-	SLG    string `json:"slg,omitempty"`
-	OPS    string `json:"ops,omitempty"`
+	HR      string `json:"hr,omitempty"`
+	RBI     string `json:"rbi,omitempty"`
+	SB      string `json:"sb,omitempty"`
+	CS      string `json:"cs,omitempty"`
+	BB      string `json:"bb,omitempty"`
+	SO      string `json:"so,omitempty"`
+	BA      string `json:"ba,omitempty"`
+	OBP     string `json:"obp,omitempty"`
+	SLG     string `json:"slg,omitempty"`
+	OPS     string `json:"ops,omitempty"`
 }
 
 // SeasonPitching is one row of a player's standard pitching table. The "Season"
@@ -80,4 +80,15 @@ type GameLog struct {
 	Team     string            `json:"team,omitempty"`
 	Opponent string            `json:"opponent,omitempty"`
 	Stats    map[string]string `json:"stats"`
+}
+
+// Team is the top-level record for one franchise season, combining the team
+// identity with team-level batting and pitching totals from its season page.
+type Team struct {
+	ID             string            `json:"id"`
+	Year           int               `json:"year"`
+	Name           string            `json:"name"`
+	SourceURL      string            `json:"source_url"`
+	BattingTotals  map[string]string `json:"batting_totals,omitempty"`
+	PitchingTotals map[string]string `json:"pitching_totals,omitempty"`
 }

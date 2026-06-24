@@ -11,9 +11,17 @@ import (
 // playerIDRe validates a baseball-reference player ID (e.g. "judgeaa01").
 var playerIDRe = regexp.MustCompile(`^[a-z][a-z0-9'.-]+[0-9]{2}$`)
 
+// teamIDRe validates a baseball-reference team ID (e.g. "NYY").
+var teamIDRe = regexp.MustCompile(`^[a-zA-Z]{2,3}$`)
+
 // ValidatePlayerID reports whether id looks like a baseball-reference player ID.
 func ValidatePlayerID(id string) bool {
 	return playerIDRe.MatchString(strings.ToLower(id))
+}
+
+// ValidateTeamID reports whether id looks like a baseball-reference team ID.
+func ValidateTeamID(id string) bool {
+	return teamIDRe.MatchString(id)
 }
 
 // playerURL builds the canonical player page URL from a player ID. The first
@@ -21,6 +29,11 @@ func ValidatePlayerID(id string) bool {
 func playerURL(id string) string {
 	id = strings.ToLower(id)
 	return fmt.Sprintf("%s/players/%s/%s.shtml", BaseURL, id[:1], id)
+}
+
+// teamURL builds the canonical team season page URL from a team ID and season.
+func teamURL(id string, year int) string {
+	return fmt.Sprintf("%s/teams/%s/%d.shtml", BaseURL, strings.ToUpper(id), year)
 }
 
 // gameLogURL builds the season game-log URL. t is "b" (batting) or "p"

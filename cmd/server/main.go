@@ -123,15 +123,31 @@ func handleRecent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
-	filtered := stats.FilterByDays(logs, days, now)
+
+	var filtered []models.GameLog
+	var from, to string
+	respDays := days
+	// Apply the rolling "last N days" window only for the current season and
+	// only when a positive window was requested. days == 0 means "full season",
+	// and past seasons are always returned in full (the window is meaningless
+	// relative to today).
+	if days > 0 && year == now.Year() {
+		filtered = stats.FilterByDays(logs, days, now)
+		from = now.AddDate(0, 0, -days).Format(stats.DateLayout)
+		to = now.Format(stats.DateLayout)
+	} else {
+		filtered = logs
+		respDays = 0
+		from, to = logDateRange(logs)
+	}
 
 	resp := recentResponse{
 		PlayerID: id,
 		Type:     logType,
 		Year:     year,
-		Days:     days,
-		From:     now.AddDate(0, 0, -days).Format(stats.DateLayout),
-		To:       now.Format(stats.DateLayout),
+		Days:     respDays,
+		From:     from,
+		To:       to,
 		Games:    len(filtered),
 		GameLogs: filtered,
 	}
@@ -172,6 +188,24 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+// logDateRange returns the earliest and latest game dates in logs. Dates use
+// the sortable YYYY-MM-DD layout, so lexical comparison matches chronological
+// order. Empty strings are returned when logs is empty.
+func logDateRange(logs []models.GameLog) (from, to string) {
+	for _, l := range logs {
+		if l.Date == "" {
+			continue
+		}
+		if from == "" || l.Date < from {
+			from = l.Date
+		}
+		if to == "" || l.Date > to {
+			to = l.Date
+		}
+	}
+	return from, to
 }
 
 func atoiDefault(s string, def int) int {
